@@ -17,7 +17,7 @@ with open('HISTORY.rst') as history_file:
     history = history_file.read().replace('.. :changelog:', '')
 
 requirements = [
-    'docopt', 'yarg'
+    'docopt', 'yarg', 'nbformat'
 ]
 
 setup(
@@ -29,8 +29,7 @@ setup(
     author_email='vadim.kravcenko@gmail.com',
     url='https://github.com/bndr/pipreqs',
     packages=[
-        'pipreqs',
-        'nbformat'
+        'pipreqs'
     ],
     package_dir={'pipreqs':
                  'pipreqs'},

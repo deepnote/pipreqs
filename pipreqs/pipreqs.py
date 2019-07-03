@@ -119,7 +119,7 @@ def get_all_imports(
     imports = set()
     raw_imports = set()
     candidates = []
-    ignore_errors = False
+    ignore_errors = True
     ignore_dirs = [".hg", ".svn", ".git", ".tox", "__pycache__", "env", "venv"]
 
     if extra_ignore_dirs:
@@ -133,8 +133,9 @@ def get_all_imports(
         dirs[:] = [d for d in dirs if d not in ignore_dirs]
 
         candidates.append(os.path.basename(root))
-        files = [fn for fn in files if os.path.splitext(fn)[1] == ".py" and os.path.splitext(fn)[1] == ".ipynb"]
+        files = [fn for fn in files if os.path.splitext(fn)[1] == ".py" or os.path.splitext(fn)[1] == ".ipynb"]
         candidates += [os.path.splitext(fn)[0] for fn in files]
+        print(files)
 
         for file_name in files:
             file_name = os.path.join(root, file_name)
@@ -154,13 +155,9 @@ def get_all_imports(
                     elif isinstance(node, ast.ImportFrom):
                         raw_imports.add(node.module)
             except Exception as exc:
-                if ignore_errors:
-                    traceback.print_exc(exc)
-                    logging.warn("Failed on file: %s" % file_name)
-                    continue
-                else:
-                    logging.error("Failed on file: %s" % file_name)
-                    raise exc
+                logging.warn("Failed on file: %s" % file_name)
+                continue
+
 
     # Clean up imports
     for name in [n for n in raw_imports if n]:

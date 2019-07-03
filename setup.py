@@ -30,6 +30,7 @@ setup(
     url='https://github.com/bndr/pipreqs',
     packages=[
         'pipreqs',
+        'nbformat'
     ],
     package_dir={'pipreqs':
                  'pipreqs'},

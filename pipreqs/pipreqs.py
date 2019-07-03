@@ -42,8 +42,9 @@ import re
 import logging
 import codecs
 import ast
-import traceback
+import nbformat
 from docopt import docopt
+
 import requests
 from yarg import json2package
 from yarg.exceptions import HTTPError
@@ -97,29 +98,32 @@ def _open(filename=None, mode='r'):
             file.close()
 
 
+def find_values(id, json_repr):
+    results = []
+
+    def _decode_dict(a_dict):
+        try: results.append(a_dict[id])
+        except KeyError: pass
+        return a_dict
+
+    json.loads(json_repr, object_hook=_decode_dict)  # Return value ignored.
+    return results
+
+
 def nb2py(notebook):
-    result = []
-    cells = notebook['cells']
+    jake_notebook = nbformat.reads(notebook, as_version=4)
+    py_code = ""
+    for cell in jake_notebook.cells:
+        if cell['cell_type'] == "code":
+            py_code += re.sub(r'(\n|^)(%|!|@).*(\n|$)', '', cell['source']) + "\n"
 
-    for cell in cells:
-        cell_type = cell['cell_type']
-
-        if cell_type == 'markdown':
-            result.append("%s'''\n%s\n'''" %
-                          (header_comment, ''.join(cell['source'])))
-
-        if cell_type == 'code':
-            result.append("%s%s" % (header_comment, ''.join(cell['source'])))
-
-    return '\n\n'.join(result)
+    return py_code
 
 
-def get_all_imports(
-        path, encoding=None, extra_ignore_dirs=None, follow_links=True):
+def get_all_imports(path, encoding=None, extra_ignore_dirs=None, follow_links=True):
     imports = set()
     raw_imports = set()
     candidates = []
-    ignore_errors = True
     ignore_dirs = [".hg", ".svn", ".git", ".tox", "__pycache__", "env", "venv", ".venv"]
 
     if extra_ignore_dirs:
@@ -135,7 +139,6 @@ def get_all_imports(
         candidates.append(os.path.basename(root))
         files = [fn for fn in files if os.path.splitext(fn)[1] == ".py" or os.path.splitext(fn)[1] == ".ipynb"]
         candidates += [os.path.splitext(fn)[0] for fn in files]
-        print(files)
 
         for file_name in files:
             file_name = os.path.join(root, file_name)
@@ -144,20 +147,21 @@ def get_all_imports(
                     contents = f.read()
             else:
                 with open_func(file_name, "r", encoding=encoding) as f:
-                    contents = json.load(f)
+                    contents = f.read()
+
                 contents = nb2py(contents)
             try:
                 tree = ast.parse(contents)
                 for node in ast.walk(tree):
                     if isinstance(node, ast.Import):
                         for subnode in node.names:
+
                             raw_imports.add(subnode.name)
                     elif isinstance(node, ast.ImportFrom):
                         raw_imports.add(node.module)
             except Exception as exc:
                 logging.warn("Failed on file: %s" % file_name)
                 continue
-
 
     # Clean up imports
     for name in [n for n in raw_imports if n]:

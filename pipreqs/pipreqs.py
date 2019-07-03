@@ -120,7 +120,7 @@ def get_all_imports(
     raw_imports = set()
     candidates = []
     ignore_errors = True
-    ignore_dirs = [".hg", ".svn", ".git", ".tox", "__pycache__", "env", "venv"]
+    ignore_dirs = [".hg", ".svn", ".git", ".tox", "__pycache__", "env", "venv", ".venv"]
 
     if extra_ignore_dirs:
         ignore_dirs_parsed = []

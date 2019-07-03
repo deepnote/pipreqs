@@ -36,6 +36,7 @@ Options:
 from __future__ import print_function, absolute_import
 from contextlib import contextmanager
 import os
+import json
 import sys
 import re
 import logging
@@ -46,6 +47,7 @@ from docopt import docopt
 import requests
 from yarg import json2package
 from yarg.exceptions import HTTPError
+
 
 from pipreqs import __version__
 
@@ -62,6 +64,7 @@ else:
     py2 = True
     py2_exclude = ["concurrent", "concurrent.futures"]
 
+header_comment = '# %%\n'
 
 @contextmanager
 def _open(filename=None, mode='r'):
@@ -94,6 +97,23 @@ def _open(filename=None, mode='r'):
             file.close()
 
 
+def nb2py(notebook):
+    result = []
+    cells = notebook['cells']
+
+    for cell in cells:
+        cell_type = cell['cell_type']
+
+        if cell_type == 'markdown':
+            result.append("%s'''\n%s\n'''" %
+                          (header_comment, ''.join(cell['source'])))
+
+        if cell_type == 'code':
+            result.append("%s%s" % (header_comment, ''.join(cell['source'])))
+
+    return '\n\n'.join(result)
+
+
 def get_all_imports(
         path, encoding=None, extra_ignore_dirs=None, follow_links=True):
     imports = set()
@@ -113,13 +133,18 @@ def get_all_imports(
         dirs[:] = [d for d in dirs if d not in ignore_dirs]
 
         candidates.append(os.path.basename(root))
-        files = [fn for fn in files if os.path.splitext(fn)[1] == ".py"]
-
+        files = [fn for fn in files if os.path.splitext(fn)[1] == ".py" and os.path.splitext(fn)[1] == ".ipynb"]
         candidates += [os.path.splitext(fn)[0] for fn in files]
+
         for file_name in files:
             file_name = os.path.join(root, file_name)
-            with open_func(file_name, "r", encoding=encoding) as f:
-                contents = f.read()
+            if os.path.splitext(file_name)[1] == ".py":
+                with open_func(file_name, "r", encoding=encoding) as f:
+                    contents = f.read()
+            else:
+                with open_func(file_name, "r", encoding=encoding) as f:
+                    contents = json.load(f)
+                contents = nb2py(contents)
             try:
                 tree = ast.parse(contents)
                 for node in ast.walk(tree):

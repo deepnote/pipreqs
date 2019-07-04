@@ -195,10 +195,9 @@ def generate_requirements_file(path, imports):
             file=path,
             imports=", ".join([x['name'] for x in imports])
         ))
-        fmt = '{name}=={version}'
-        out_file.write('\n'.join(
-            fmt.format(**item) if item['version'] else '{name}'.format(**item)
-            for item in imports) + '\n')
+        fmt = '{name}'
+        out_file.write(
+            '\n'.join(fmt.format(**item) if item['version'] else '{name}'.format(**item) for item in imports) + '\n')
 
 
 def output_requirements(imports):

@@ -1141,3 +1141,4 @@ z3c:z3c.zcmlhook
 zmq:pyzmq
 zopyx:zopyx.textindexng3
 cv2:opencv-python
+psycopg2:psycopg2-binary

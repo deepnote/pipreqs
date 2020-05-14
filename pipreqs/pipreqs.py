@@ -135,13 +135,11 @@ def get_all_imports(path, encoding=None, extra_ignore_dirs=None, follow_links=Tr
     walk = os.walk(path, followlinks=follow_links)
     for root, dirs, files in walk:
         dirs[:] = [d for d in dirs if d not in ignore_dirs]
-        print(files)
         candidates.append(os.path.basename(root))
         files = [fn for fn in files if os.path.splitext(fn)[1] == ".py" or os.path.splitext(fn)[1] == ".ipynb"]
         candidates += [os.path.splitext(fn)[0] for fn in files]
 
         for file_name in files:
-            print("  " + file_name)
             file_name = os.path.join(root, file_name)
             if os.path.splitext(file_name)[1] == ".py":
                 with open_func(file_name, "r", encoding=encoding) as f:
